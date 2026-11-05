@@ -95,9 +95,12 @@ const getUserRank = async (userId) => {
 // Emit real-time leaderboard update to all connected clients
 const emitLeaderboardUpdate = async (updatedUserId = null) => {
   if (!io) {
-    console.log('⚠️ Socket.IO not initialized');
+    console.log('⚠️ [Leaderboard WS] Socket.IO not initialized');
     return;
   }
+
+  const clientCount = io.sockets?.sockets?.size ?? 0;
+  console.log(`📡 [Leaderboard WS] Emitting update to ${clientCount} connected client(s)...`);
 
   try {
     // Fetch and emit BEGINNER leaderboard
@@ -121,6 +124,7 @@ const emitLeaderboardUpdate = async (updatedUserId = null) => {
       timestamp: new Date().toISOString(),
       updated_user: updatedUserId
     });
+    console.log(`✅ [Leaderboard WS] Emitted beginner leaderboard (${rankedBeginnerLeaderboard.length} teams)`);
 
     // Fetch and emit INTERMEDIATE leaderboard
     const intermediateLeaderboard = await User.find({ field: 'user', difficulty: 'intermediate' })
@@ -143,6 +147,7 @@ const emitLeaderboardUpdate = async (updatedUserId = null) => {
       timestamp: new Date().toISOString(),
       updated_user: updatedUserId
     });
+    console.log(`✅ [Leaderboard WS] Emitted intermediate leaderboard (${rankedIntermediateLeaderboard.length} teams)`);
 
     // If specific user updated, emit their new rank within their difficulty level
     if (updatedUserId) {
@@ -156,12 +161,11 @@ const emitLeaderboardUpdate = async (updatedUserId = null) => {
           difficulty: userRank.difficulty,
           timestamp: new Date().toISOString()
         });
+        console.log(`🏆 [Leaderboard WS] Emitted user_rank_change for user ${updatedUserId} (Rank #${userRank.rank})`);
       }
     }
-
-    console.log(`Leaderboard updates emitted for both difficulty levels`);
   } catch (error) {
-    console.error('Error emitting leaderboard update:', error);
+    console.error('❌ [Leaderboard WS] Error emitting leaderboard update:', error);
   }
 };
 
